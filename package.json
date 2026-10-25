@@ -2,8 +2,14 @@
   "name": "cricketdata-prediction-engine",
   "version": "1.0.0",
   "private": true,
-  "main": "server.local.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.local.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.local.js"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
   }
 }
