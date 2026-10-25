@@ -2,9 +2,9 @@
 // Fetches squad from CricketData.org using process.env.CRICKETDATA_API_KEY
 // Key is kept strictly server-side and never exposed to the client.
 
-const https = require('https');
+import https from 'https';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -43,4 +43,4 @@ module.exports = async (req, res) => {
   }).on('error', (err) => {
     res.status(500).json({ status: 'failure', message: err.message });
   });
-};
+}

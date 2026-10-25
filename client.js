@@ -199,7 +199,13 @@ async function fetchMatchesFromProxy() {
 
   try {
     const res = await fetch('/api/matches');
-    const json = await res.json();
+    const text = await res.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Server returned non-JSON response (${res.status} ${res.statusText}): ${text.substring(0, 150)}`);
+    }
     
     rawJsonCode.innerText = JSON.stringify(json, null, 2);
 
@@ -216,7 +222,7 @@ async function fetchMatchesFromProxy() {
     await checkServerStatus();
   } catch (err) {
     console.error("Fetch error:", err);
-    alert(`Error: ${err.message}\nMake sure CRICKETDATA_API_KEY is set in your server .env file.`);
+    alert(`Error: ${err.message}`);
     rawJsonCode.innerText = `Error: ${err.message}`;
   } finally {
     fetchMatchesBtn.innerText = "Fetch Matches";
