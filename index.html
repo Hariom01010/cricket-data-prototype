@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Prediction Engine - CricketData.org to OpenAPI Mapper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="brand">
+        <span class="brand-badge">SECURE PROXY</span>
+        <h1>CricketData <span>/ OpenAPI Prediction Mapper</span></h1>
+      </div>
+      <div class="api-manager">
+        <a href="docs.html" class="btn outline-btn" style="text-decoration: none;">📖 API Mapping Docs</a>
+        <div class="quota-pill" id="quotaDisplay">
+          <span class="dot"></span>
+          <span>Hits: <strong id="hitCount">0</strong> / 100</span>
+        </div>
+        <div class="key-status-wrap">
+          <span id="envKeyStatus" class="env-status-badge checking">Checking .env...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top Answers Summary Cards -->
+    <section class="answers-grid">
+      <div class="answer-box">
+        <div class="ans-header">
+          <span class="ans-badge yes">✓ YES</span>
+          <h3>Q1: Timing & Match Scheduling</h3>
+        </div>
+        <p>
+          CricketData.org provides <code>dateTimeGMT</code> (ISO 8601 UTC timestamp).
+          Your OpenAPI spec specifies two lock policies: <code>BEFORE_MATCH_START</code> (locks at <code>dateTimeGMT - 5m</code>) and <code>BEFORE_TOSS</code> (locks at <code>dateTimeGMT - 30m</code>).
+          Exact timestamps are calculated directly from this field to schedule automated publishing and submission cutoffs.
+        </p>
+      </div>
+
+      <div class="answer-box">
+        <div class="ans-header">
+          <span class="ans-badge yes">✓ DIRECT MAPPING</span>
+          <h3>Q2: Data Granularity (No LLM Needed)</h3>
+        </div>
+        <p>
+          All 8 static templates defined in <code>predictions-api-endpoints.yaml</code> (e.g. <code>MATCH_WINNER</code>, <code>TOSS_WINNER</code>, <code>MOST_RUNS</code>, <code>MOST_WICKETS</code>) map <strong>100% deterministically</strong> from <code>teams</code>, <code>teamInfo</code>, and <code>/match_squad</code>.
+          Rule-based resolution is deterministic, zero-latency, zero-cost, and ensures exact ID matching for automated result settlement.
+        </p>
+      </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-grid">
+      
+      <!-- Panel 1: Live Matches -->
+      <section class="card panel-matches">
+        <div class="card-header">
+          <div>
+            <h2>Upcoming Fixtures</h2>
+            <p class="subtitle">Live data from backend proxy <code>/api/matches</code></p>
+          </div>
+          <div class="actions">
+            <button id="fetchMatchesBtn" class="btn action-btn">Fetch Matches</button>
+          </div>
+        </div>
+
+        <div class="tab-header">
+          <span class="tab-btn active" id="tabMatchList">Matches</span>
+          <span class="tab-btn" id="tabRawApi">API Response</span>
+        </div>
+
+        <div id="matchListView" class="match-list">
+          <div class="empty-state">
+            Click <strong>Fetch Matches</strong> to load live fixtures using the backend environment variable.
+          </div>
+        </div>
+
+        <div id="rawApiView" class="code-viewer hidden">
+          <pre><code id="rawJsonCode">// Live API response will appear here...</code></pre>
+        </div>
+      </section>
+
+      <!-- Panel 2: OpenAPI Question Generator -->
+      <section class="card panel-generator">
+        <div class="card-header">
+          <div>
+            <h2>OpenAPI Question Generator</h2>
+            <p class="subtitle">Transforms fixture data into your <code>CreatedQuestionList</code> schema</p>
+          </div>
+          <div class="actions">
+            <button id="fetchSquadBtn" class="btn outline-btn" disabled>Fetch Match Squad (1 Hit)</button>
+            <button id="generateQuestionsBtn" class="btn glow-btn" disabled>Generate Questions</button>
+          </div>
+        </div>
+
+        <!-- Selected Match Bar -->
+        <div class="selected-match-bar" id="selectedMatchBanner">
+          <div class="match-meta-line">
+            <span class="label">Target Match:</span>
+            <span class="val" id="selectedMatchName">No match selected</span>
+          </div>
+          <div class="match-time-line">
+            <span class="tag-timing" id="matchUtcTime">dateTimeGMT: --</span>
+            <span class="tag-lock" id="matchTossLock">Toss Cutoff (T-30m): --</span>
+            <span class="tag-lock" id="matchStartLock">Match Cutoff (T-5m): --</span>
+          </div>
+        </div>
+
+        <!-- Template Selector -->
+        <div class="template-selector-box">
+          <div class="sub-header">
+            <h3>Spec Templates to Generate</h3>
+            <span class="sub-note">Select templates to resolve for this match</span>
+          </div>
+          <div class="spec-templates-grid" id="templatesSelectorGrid">
+            <!-- Dynamically populated from JS -->
+          </div>
+        </div>
+
+        <!-- Output Views -->
+        <div class="tab-header">
+          <span class="tab-btn active" id="tabQuestionsCards">Question Cards</span>
+          <span class="tab-btn" id="tabOpenApiJson">OpenAPI 201 Response JSON</span>
+        </div>
+
+        <div id="questionsCardsView" class="feed-list">
+          <div class="empty-state">Select a match and click "Generate Questions".</div>
+        </div>
+
+        <div id="openApiJsonView" class="code-viewer hidden">
+          <pre><code id="openApiOutputCode">// OpenAPI JSON will appear here...</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <!-- Schema Mapping Reference Table -->
+    <section class="card mapping-table-card">
+      <div class="card-header">
+        <div>
+          <h2>CricketData.org → OpenAPI Schema Mapping Reference</h2>
+          <p class="subtitle">How each template in <code>predictions-api-endpoints.yaml</code> resolves without an LLM</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="mapping-table">
+          <thead>
+            <tr>
+              <th>Template Code</th>
+              <th>YAML OptionSource</th>
+              <th>YAML LockPolicy</th>
+              <th>CricketData.org Source Field</th>
+              <th>Needs LLM?</th>
+              <th>Settlement Field</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>MATCH_WINNER</code></td>
+              <td><code>MATCH_TEAMS</code></td>
+              <td><code>BEFORE_MATCH_START</code> (T - 5m)</td>
+              <td><code>data[].teams</code> (Array of 2 teams)</td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_info.matchWinner</code></td>
+            </tr>
+            <tr>
+              <td><code>TOSS_WINNER</code></td>
+              <td><code>MATCH_TEAMS</code></td>
+              <td><code>BEFORE_TOSS</code> (T - 30m)</td>
+              <td><code>data[].teams</code></td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_info.tossWinner</code></td>
+            </tr>
+            <tr>
+              <td><code>TOSS_DECISION</code></td>
+              <td><code>BAT_OR_BOWL</code></td>
+              <td><code>BEFORE_TOSS</code> (T - 30m)</td>
+              <td>Enum: <code>["Bat", "Bowl"]</code></td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_info.tossChoice</code></td>
+            </tr>
+            <tr>
+              <td><code>MOST_RUNS</code></td>
+              <td><code>CONFIRMED_MATCH_PLAYERS</code></td>
+              <td><code>BEFORE_MATCH_START</code></td>
+              <td><code>/match_squad</code> -> <code>players[]</code></td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_scorecard</code> batting</td>
+            </tr>
+            <tr>
+              <td><code>MOST_WICKETS</code></td>
+              <td><code>CONFIRMED_MATCH_PLAYERS</code></td>
+              <td><code>BEFORE_MATCH_START</code></td>
+              <td><code>/match_squad</code> -> <code>players[]</code></td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_scorecard</code> bowling</td>
+            </tr>
+            <tr>
+              <td><code>MOST_SIXES_TEAM</code></td>
+              <td><code>MATCH_TEAMS_WITH_TIE</code></td>
+              <td><code>BEFORE_MATCH_START</code></td>
+              <td><code>data[].teams</code> + "Tie / Equal"</td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_scorecard</code> team 6s</td>
+            </tr>
+            <tr>
+              <td><code>PLAYER_OF_MATCH</code></td>
+              <td><code>CONFIRMED_MATCH_PLAYERS</code></td>
+              <td><code>BEFORE_MATCH_START</code></td>
+              <td><code>/match_squad</code> -> <code>players[]</code></td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_info.playerOfMatch</code></td>
+            </tr>
+            <tr>
+              <td><code>FINAL_SCHEDULED_OVER</code></td>
+              <td><code>YES_NO</code></td>
+              <td><code>BEFORE_MATCH_START</code></td>
+              <td>Enum: <code>["Yes", "No"]</code></td>
+              <td><span class="badge-no">No</span></td>
+              <td><code>match_scorecard</code> overs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

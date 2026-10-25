@@ -1,0 +1,12 @@
+{
+  "name": "cricketdata-prediction-engine",
+  "version": "1.0.0",
+  "description": "Cricket prediction prototype with secure backend proxy",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {}
+}

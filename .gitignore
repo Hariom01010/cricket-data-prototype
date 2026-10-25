@@ -1,0 +1,10 @@
+# Environment variables (contains private keys - never commit!)
+.env
+.env.local
+.env.*.local
+
+# Logs and system files
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db

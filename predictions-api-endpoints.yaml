@@ -1,0 +1,1652 @@
+openapi: 3.0.3
+info:
+  title: Cricket Monster Prediction API Endpoints
+  version: 1.0.0
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Admin Templates
+    description: Reusable static question definitions.
+  - name: Admin Questions
+    description: Match-specific static questions and publication.
+  - name: User Questions
+    description: Questions available to authenticated users.
+  - name: User Predictions
+    description: The authenticated user's answers.
+  - name: Admin Results
+    description: Manual results, corrections and points.
+paths:
+  /admin/prediction-templates:
+    post:
+      tags:
+        - Admin Templates
+      summary: Create a static question template
+      operationId: createPredictionTemplate
+      description: The code
+        must be unique. Answer type, option source and evaluator must be compatible. Points must be non-negative.
+        Requires `predictions.template.manage` permission (admin or assigned role).
+      responses:
+        "201":
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionTemplate"
+              example:
+                id: template_001
+                code: MATCH_WINNER
+                questionText: Who will win {{teamA}} vs {{teamB}}?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                points: 10
+                isActive: true
+                questionType: STATIC
+                version: 1
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.template.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTemplateRequest"
+            examples:
+              MATCH_WINNER:
+                summary: Match Winner
+                value:
+                  code: MATCH_WINNER
+                  questionText: Who will win {{teamA}} vs {{teamB}}?
+                  answerType: TEAM_SELECT
+                  optionSource: MATCH_TEAMS
+                  evaluator: MATCH_WINNER
+                  lockPolicy: BEFORE_MATCH_START
+                  points: 10
+              TOSS_WINNER:
+                summary: Toss Winner
+                value:
+                  code: TOSS_WINNER
+                  questionText: Who will win the toss?
+                  answerType: TEAM_SELECT
+                  optionSource: MATCH_TEAMS
+                  evaluator: TOSS_WINNER
+                  lockPolicy: BEFORE_TOSS
+                  points: 10
+              TOSS_DECISION:
+                summary: Toss Decision
+                value:
+                  code: TOSS_DECISION
+                  questionText: Will the toss winner bat or bowl?
+                  answerType: ENUM_SELECT
+                  optionSource: BAT_OR_BOWL
+                  evaluator: TOSS_DECISION
+                  lockPolicy: BEFORE_TOSS
+                  points: 10
+              MOST_RUNS:
+                summary: Most Runs
+                value:
+                  code: MOST_RUNS
+                  questionText: Who will score the most runs?
+                  answerType: PLAYER_SELECT
+                  optionSource: CONFIRMED_MATCH_PLAYERS
+                  evaluator: MOST_RUNS
+                  lockPolicy: BEFORE_MATCH_START
+                  points: 10
+              MOST_WICKETS:
+                summary: Most Wickets
+                value:
+                  code: MOST_WICKETS
+                  questionText: Who will take the most wickets?
+                  answerType: PLAYER_SELECT
+                  optionSource: CONFIRMED_MATCH_PLAYERS
+                  evaluator: MOST_WICKETS
+                  lockPolicy: BEFORE_MATCH_START
+                  points: 10
+              MOST_SIXES_TEAM:
+                summary: Most Sixes Team
+                value:
+                  code: MOST_SIXES_TEAM
+                  questionText: Which team will hit more sixes?
+                  answerType: TEAM_SELECT
+                  optionSource: MATCH_TEAMS_WITH_TIE
+                  evaluator: MOST_SIXES_TEAM
+                  lockPolicy: BEFORE_MATCH_START
+                  points: 10
+              PLAYER_OF_MATCH:
+                summary: Player Of Match
+                value:
+                  code: PLAYER_OF_MATCH
+                  questionText: Who will be Player of the Match?
+                  answerType: PLAYER_SELECT
+                  optionSource: CONFIRMED_MATCH_PLAYERS
+                  evaluator: PLAYER_OF_MATCH
+                  lockPolicy: BEFORE_MATCH_START
+                  points: 10
+              FINAL_SCHEDULED_OVER:
+                summary: Final Scheduled Over
+                value:
+                  code: FINAL_SCHEDULED_OVER
+                  questionText: Will the match reach the final scheduled over?
+                  answerType: YES_NO
+                  optionSource: YES_NO
+                  evaluator: FINAL_SCHEDULED_OVER
+                  lockPolicy: BEFORE_MATCH_START
+                  points: 10
+    get:
+      tags:
+        - Admin Templates
+      summary: List static templates
+      operationId: listPredictionTemplates
+      description: Requires `predictions.template.manage`
+        permission (admin or assigned role).
+      responses:
+        "200":
+          description: Paginated templates.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateList"
+              example:
+                items:
+                  - id: template_001
+                    code: MATCH_WINNER
+                    questionText: Who will win {{teamA}} vs {{teamB}}?
+                    answerType: TEAM_SELECT
+                    optionSource: MATCH_TEAMS
+                    evaluator: MATCH_WINNER
+                    lockPolicy: BEFORE_MATCH_START
+                    points: 10
+                    isActive: true
+                    questionType: STATIC
+                    version: 1
+                    createdAt: "2026-11-01T12:00:00Z"
+                    updatedAt: "2026-11-01T12:00:00Z"
+                page: 1
+                pageSize: 20
+                total: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.template.manage
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+  /admin/prediction-templates/{templateId}:
+    get:
+      tags:
+        - Admin Templates
+      summary: Get a template
+      operationId: getPredictionTemplate
+      description: " Requires `predictions.template.manage` permission (admin or assigned role)."
+      responses:
+        "200":
+          description: Template details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionTemplate"
+              example:
+                id: template_001
+                code: MATCH_WINNER
+                questionText: Who will win {{teamA}} vs {{teamB}}?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                points: 10
+                isActive: true
+                questionType: STATIC
+                version: 1
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      x-required-permission: predictions.template.manage
+      parameters:
+        - $ref: "#/components/parameters/templateId"
+    patch:
+      tags:
+        - Admin Templates
+      summary: Update or activate/deactivate a template
+      operationId: updatePredictionTemplate
+      description:
+        The code is immutable. A successful change increments the template version. Existing match questions
+        keep their copied template version and values. Deactivation prevents creating new instances. Requires `predictions.template.manage`
+        permission (admin or assigned role).
+      responses:
+        "200":
+          description: Updated template.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionTemplate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.template.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTemplateRequest"
+            example:
+              points: 15
+              isActive: true
+      parameters:
+        - $ref: "#/components/parameters/templateId"
+  /admin/matches/{matchId}/prediction-questions:
+    post:
+      tags:
+        - Admin Questions
+      summary: Create match questions from static templates
+      operationId: createMatchPredictionQuestions
+      description:
+        Resolves approved placeholders and match options and calculates deadlines from each template
+        lock policy. Each question copies its template version, evaluator and points. All requested templates must
+        be active, applicable and resolvable. Creation is atomic. A duplicate match/template-code instance returns
+        409. Requires `predictions.question.create` permission (admin or assigned role).
+      responses:
+        "201":
+          description: Draft questions created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedQuestionList"
+              example:
+                items:
+                  - id: question_001
+                    matchId: match_123
+                    templateCode: MATCH_WINNER
+                    templateVersion: 1
+                    questionType: STATIC
+                    questionText: Who will win Team A vs Team B?
+                    answerType: TEAM_SELECT
+                    optionSource: MATCH_TEAMS
+                    options:
+                      - id: team_123
+                        label: Team A
+                      - id: team_456
+                        label: Team B
+                    evaluator: MATCH_WINNER
+                    lockPolicy: BEFORE_MATCH_START
+                    locksAt: "2026-11-01T13:55:00Z"
+                    points: 10
+                    status: DRAFT
+                    result: null
+                    voidReason: null
+                    createdAt: "2026-11-01T12:00:00Z"
+                    updatedAt: "2026-11-01T12:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.question.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMatchQuestionsRequest"
+            example:
+              templateCodes:
+                - MATCH_WINNER
+      parameters:
+        - $ref: "#/components/parameters/matchId"
+    get:
+      tags:
+        - Admin Questions
+      summary: List match questions including drafts
+      operationId: listAdminMatchPredictionQuestions
+      description: " Requires `predictions.question.create` permission (admin or assigned role)."
+      responses:
+        "200":
+          description: Paginated match questions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionList"
+              example:
+                items:
+                  - id: question_001
+                    matchId: match_123
+                    templateCode: MATCH_WINNER
+                    templateVersion: 1
+                    questionType: STATIC
+                    questionText: Who will win Team A vs Team B?
+                    answerType: TEAM_SELECT
+                    optionSource: MATCH_TEAMS
+                    options:
+                      - id: team_123
+                        label: Team A
+                      - id: team_456
+                        label: Team B
+                    evaluator: MATCH_WINNER
+                    lockPolicy: BEFORE_MATCH_START
+                    locksAt: "2026-11-01T13:55:00Z"
+                    points: 10
+                    status: DRAFT
+                    result: null
+                    voidReason: null
+                    createdAt: "2026-11-01T12:00:00Z"
+                    updatedAt: "2026-11-01T12:00:00Z"
+                page: 1
+                pageSize: 20
+                total: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.question.create
+      parameters:
+        - $ref: "#/components/parameters/matchId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/QuestionStatus"
+  /admin/prediction-questions/{questionId}:
+    get:
+      tags:
+        - Admin Questions
+      summary: Get question details including drafts
+      operationId: getAdminPredictionQuestion
+      description: " Requires `predictions.question.create` permission (admin or assigned role)."
+      responses:
+        "200":
+          description: Question details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionQuestion"
+              example:
+                id: question_001
+                matchId: match_123
+                templateCode: MATCH_WINNER
+                templateVersion: 1
+                questionType: STATIC
+                questionText: Who will win Team A vs Team B?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                options:
+                  - id: team_123
+                    label: Team A
+                  - id: team_456
+                    label: Team B
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                locksAt: "2026-11-01T13:55:00Z"
+                points: 10
+                status: DRAFT
+                result: null
+                voidReason: null
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      x-required-permission: predictions.question.create
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+    patch:
+      tags:
+        - Admin Questions
+      summary: Edit a draft question
+      operationId: updateDraftPredictionQuestion
+      description:
+        Allowed only in DRAFT. Changes must retain the meaning of the selected evaluator. Options and
+        evaluator are resolved from the template and match; they cannot be changed through this endpoint. The deadline
+        cannot exceed the relevant event cutoff. Requires `predictions.question.create` permission (admin or assigned
+        role).
+      responses:
+        "200":
+          description: Updated draft question.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionQuestion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.question.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuestionRequest"
+            example:
+              points: 10
+              locksAt: "2026-11-01T13:55:00Z"
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+    delete:
+      tags:
+        - Admin Questions
+      summary: Delete a draft question
+      operationId: deleteDraftPredictionQuestion
+      description:
+        Allowed only in DRAFT. Published questions must be voided instead. Requires `predictions.question.create`
+        permission (admin or assigned role).
+      responses:
+        "204":
+          description: Draft deleted. No response body.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      x-required-permission: predictions.question.create
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+  /admin/prediction-questions/{questionId}/publish:
+    post:
+      tags:
+        - Admin Questions
+      summary: Publish a draft question
+      operationId: publishPredictionQuestion
+      description:
+        DRAFT to PUBLISHED. Validates resolved text, eligible options, points and a future deadline.
+        Rejects publication when the relevant event has begun or the answer is already known. Published questions
+        are available immediately. Requires `predictions.question.publish` permission (admin or assigned role).
+      responses:
+        "200":
+          description: Published question.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionQuestion"
+              example:
+                id: question_001
+                matchId: match_123
+                templateCode: MATCH_WINNER
+                templateVersion: 1
+                questionType: STATIC
+                questionText: Who will win Team A vs Team B?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                options:
+                  - id: team_123
+                    label: Team A
+                  - id: team_456
+                    label: Team B
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                locksAt: "2026-11-01T13:55:00Z"
+                points: 10
+                status: PUBLISHED
+                result: null
+                voidReason: null
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.question.publish
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+  /admin/prediction-questions/{questionId}/lock:
+    post:
+      tags:
+        - Admin Questions
+      summary: Close question submissions manually
+      operationId: lockPredictionQuestion
+      description:
+        PUBLISHED to LOCKED. An already locked question is returned unchanged. Other states return 409.
+        The backend also locks automatically at the configured deadline or earlier when the relevant event starts.
+        Requires `predictions.question.publish` permission (admin or assigned role).
+      responses:
+        "200":
+          description: Locked question.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionQuestion"
+              example:
+                id: question_001
+                matchId: match_123
+                templateCode: MATCH_WINNER
+                templateVersion: 1
+                questionType: STATIC
+                questionText: Who will win Team A vs Team B?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                options:
+                  - id: team_123
+                    label: Team A
+                  - id: team_456
+                    label: Team B
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                locksAt: "2026-11-01T13:55:00Z"
+                points: 10
+                status: LOCKED
+                result: null
+                voidReason: null
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      x-required-permission: predictions.question.publish
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+  /admin/prediction-questions/{questionId}/void:
+    post:
+      tags:
+        - Admin Questions
+      summary: Void a question with a reason
+      operationId: voidPredictionQuestion
+      description:
+        PUBLISHED, LOCKED or RESOLVED to VOID. Closes submissions and gives affected predictions outcome
+        VOID with zero points, reversing any previously awarded points. Repeating the same request does not change
+        scores again. An already void question with a different reason returns 409. Drafts should be deleted. Requires
+        `predictions.question.publish` permission (admin or assigned role).
+      responses:
+        "200":
+          description: Voided question.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionQuestion"
+              example:
+                id: question_001
+                matchId: match_123
+                templateCode: MATCH_WINNER
+                templateVersion: 1
+                questionType: STATIC
+                questionText: Who will win Team A vs Team B?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                options:
+                  - id: team_123
+                    label: Team A
+                  - id: team_456
+                    label: Team B
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                locksAt: "2026-11-01T13:55:00Z"
+                points: 10
+                status: VOID
+                result: null
+                voidReason: Match abandoned.
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.question.publish
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidQuestionRequest"
+            example:
+              reason: Match abandoned.
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+  /matches/{matchId}/prediction-questions:
+    get:
+      tags:
+        - User Questions
+      summary: List published match questions
+      operationId: listMatchPredictionQuestions
+      description:
+        Includes PUBLISHED, LOCKED, RESOLVED and VOID; never exposes DRAFT. Correct options remain null
+        until the question is resolved.
+      responses:
+        "200":
+          description: Questions visible to users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionList"
+              example:
+                items:
+                  - id: question_001
+                    matchId: match_123
+                    templateCode: MATCH_WINNER
+                    templateVersion: 1
+                    questionType: STATIC
+                    questionText: Who will win Team A vs Team B?
+                    answerType: TEAM_SELECT
+                    optionSource: MATCH_TEAMS
+                    options:
+                      - id: team_123
+                        label: Team A
+                      - id: team_456
+                        label: Team B
+                    evaluator: MATCH_WINNER
+                    lockPolicy: BEFORE_MATCH_START
+                    locksAt: "2026-11-01T13:55:00Z"
+                    points: 10
+                    status: PUBLISHED
+                    result: null
+                    voidReason: null
+                    createdAt: "2026-11-01T12:00:00Z"
+                    updatedAt: "2026-11-01T12:00:00Z"
+                page: 1
+                pageSize: 20
+                total: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      parameters:
+        - $ref: "#/components/parameters/matchId"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+  /prediction-questions/{questionId}:
+    get:
+      tags:
+        - User Questions
+      summary: Get question options, deadline and result
+      operationId: getPredictionQuestion
+      description: Draft questions return 404. The result is null until resolution.
+      responses:
+        "200":
+          description: Question details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionQuestion"
+              example:
+                id: question_001
+                matchId: match_123
+                templateCode: MATCH_WINNER
+                templateVersion: 1
+                questionType: STATIC
+                questionText: Who will win Team A vs Team B?
+                answerType: TEAM_SELECT
+                optionSource: MATCH_TEAMS
+                options:
+                  - id: team_123
+                    label: Team A
+                  - id: team_456
+                    label: Team B
+                evaluator: MATCH_WINNER
+                lockPolicy: BEFORE_MATCH_START
+                locksAt: "2026-11-01T13:55:00Z"
+                points: 10
+                status: PUBLISHED
+                result: null
+                voidReason: null
+                createdAt: "2026-11-01T12:00:00Z"
+                updatedAt: "2026-11-01T12:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+  /prediction-questions/{questionId}/my-prediction:
+    put:
+      tags:
+        - User Predictions
+      summary: Submit or change my prediction
+      operationId: upsertMyPrediction
+      description: Repeating an identical request creates no duplicate.
+      responses:
+        "200":
+          description: Existing prediction updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPrediction"
+              example:
+                id: prediction_001
+                userId: user_001
+                matchId: match_123
+                questionId: question_001
+                selectedOptionId: team_123
+                outcome: PENDING
+                awardedPoints: 0
+                submittedAt: "2026-11-01T13:00:00Z"
+                updatedAt: "2026-11-01T13:00:00Z"
+        "201":
+          description: First prediction created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPrediction"
+              example:
+                id: prediction_001
+                userId: user_001
+                matchId: match_123
+                questionId: question_001
+                selectedOptionId: team_123
+                outcome: PENDING
+                awardedPoints: 0
+                submittedAt: "2026-11-01T13:00:00Z"
+                updatedAt: "2026-11-01T13:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitPredictionRequest"
+            example:
+              selectedOptionId: team_123
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+    get:
+      tags:
+        - User Predictions
+      summary: Get my answer and awarded points
+      operationId: getMyPrediction
+      description: Returns only the authenticated user's prediction. Returns 404 when no prediction exists.
+      responses:
+        "200":
+          description: Current user prediction.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPrediction"
+              example:
+                id: prediction_001
+                userId: user_001
+                matchId: match_123
+                questionId: question_001
+                selectedOptionId: team_123
+                outcome: PENDING
+                awardedPoints: 0
+                submittedAt: "2026-11-01T13:00:00Z"
+                updatedAt: "2026-11-01T13:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+  /me/predictions:
+    get:
+      tags:
+        - User Predictions
+      summary: List my predictions
+      operationId: listMyPredictions
+      description: Returns only the authenticated user's predictions; omit matchId to list predictions across matches.
+      responses:
+        "200":
+          description: Current user predictions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionList"
+              example:
+                items:
+                  - id: prediction_001
+                    userId: user_001
+                    matchId: match_123
+                    questionId: question_001
+                    selectedOptionId: team_123
+                    outcome: PENDING
+                    awardedPoints: 0
+                    submittedAt: "2026-11-01T13:00:00Z"
+                    updatedAt: "2026-11-01T13:00:00Z"
+                page: 1
+                pageSize: 20
+                total: 1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - name: matchId
+          in: query
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          example: match_123
+  /admin/prediction-questions/{questionId}/result:
+    get:
+      tags:
+        - Admin Results
+      summary: Get the recorded question result
+      operationId: getPredictionResult
+      description:
+        Returns 404 if no result has been recorded. If a resolved question is later voided, this endpoint
+        retains the last recorded result for audit; the parent question status remains authoritative. Requires `predictions.result.manage`
+        permission (admin or assigned role).
+      responses:
+        "200":
+          description: Recorded result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionResult"
+              example:
+                questionId: question_001
+                correctOptionIds:
+                  - team_123
+                version: 1
+                reason: null
+                recordedBy: admin_001
+                recordedAt: "2026-11-01T18:00:00Z"
+                updatedAt: "2026-11-01T18:00:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      x-required-permission: predictions.result.manage
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+    put:
+      tags:
+        - Admin Results
+      summary: Record or correct a result and apply scoring
+      operationId: recordPredictionResult
+      description:
+        Initial settlement requires LOCKED; corrections require RESOLVED. Draft, open and void questions
+        return 409. The operator must verify the official outcome against the template evaluator. Every correctOptionId
+        must belong to the question. A selected correct option earns the question points; other answers earn zero.
+        Multiple correct IDs support tied outcomes. Settlement sets the question to RESOLVED. An identical outcome
+        is a no-op. A changed outcome requires reason, increments result version and adjusts existing scores by
+        the difference without duplicate rewards. Settlement and corrections must be atomic and serialized per question.
+        Requires `predictions.result.manage` permission (admin or assigned role).
+      responses:
+        "200":
+          description: Existing result returned or corrected; scoring completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionResult"
+              example:
+                questionId: question_001
+                correctOptionIds:
+                  - team_123
+                version: 1
+                reason: null
+                recordedBy: admin_001
+                recordedAt: "2026-11-01T18:00:00Z"
+                updatedAt: "2026-11-01T18:00:00Z"
+        "201":
+          description: First result recorded; scoring completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionResult"
+              example:
+                questionId: question_001
+                correctOptionIds:
+                  - team_123
+                version: 1
+                reason: null
+                recordedBy: admin_001
+                recordedAt: "2026-11-01T18:00:00Z"
+                updatedAt: "2026-11-01T18:00:00Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+      x-required-permission: predictions.result.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordResultRequest"
+            example:
+              correctOptionIds:
+                - team_123
+      parameters:
+        - $ref: "#/components/parameters/questionId"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    templateId:
+      name: templateId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: template_001
+    questionId:
+      name: questionId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: question_001
+    matchId:
+      name: matchId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: match_123
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    pageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    BadRequest:
+      description: Malformed request or query.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: BAD_REQUEST
+            message: The request could not be parsed.
+    Unauthorized:
+      description: Missing, expired or invalid bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: UNAUTHORIZED
+            message: Authentication is required.
+    Forbidden:
+      description: The authenticated user lacks the required permission.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: FORBIDDEN
+            message: You do not have permission to perform this operation.
+    NotFound:
+      description: The requested resource was not found or is not visible to the caller.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: NOT_FOUND
+            message: The requested resource was not found.
+    Conflict:
+      description: The resource state or an existing record prevents this operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: CONFLICT
+            message: The operation conflicts with the current resource state.
+    ValidationError:
+      description: Well-formed request failed field or business validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: VALIDATION_ERROR
+            message: One or more values are invalid.
+  schemas:
+    TemplateCode:
+      type: string
+      enum:
+        - MATCH_WINNER
+        - TOSS_WINNER
+        - TOSS_DECISION
+        - MOST_RUNS
+        - MOST_WICKETS
+        - MOST_SIXES_TEAM
+        - PLAYER_OF_MATCH
+        - FINAL_SCHEDULED_OVER
+    AnswerType:
+      type: string
+      enum:
+        - TEAM_SELECT
+        - PLAYER_SELECT
+        - ENUM_SELECT
+        - YES_NO
+    OptionSource:
+      type: string
+      enum:
+        - MATCH_TEAMS
+        - MATCH_TEAMS_WITH_TIE
+        - CONFIRMED_MATCH_PLAYERS
+        - BAT_OR_BOWL
+        - YES_NO
+    LockPolicy:
+      type: string
+      enum:
+        - BEFORE_MATCH_START
+        - BEFORE_TOSS
+    QuestionStatus:
+      type: string
+      enum:
+        - DRAFT
+        - PUBLISHED
+        - LOCKED
+        - RESOLVED
+        - VOID
+    PredictionOutcome:
+      type: string
+      enum:
+        - PENDING
+        - CORRECT
+        - INCORRECT
+        - VOID
+    CreateTemplateRequest:
+      type: object
+      properties:
+        code:
+          $ref: "#/components/schemas/TemplateCode"
+        questionText:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Reusable text with supported placeholders, such as {{teamA}} and {{teamB}}.
+        answerType:
+          $ref: "#/components/schemas/AnswerType"
+        optionSource:
+          $ref: "#/components/schemas/OptionSource"
+        evaluator:
+          $ref: "#/components/schemas/TemplateCode"
+        lockPolicy:
+          $ref: "#/components/schemas/LockPolicy"
+        points:
+          type: integer
+          minimum: 0
+          example: 10
+        isActive:
+          type: boolean
+          default: true
+      additionalProperties: false
+      required:
+        - code
+        - questionText
+        - answerType
+        - optionSource
+        - evaluator
+        - lockPolicy
+        - points
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        questionText:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Reusable text with supported placeholders, such as {{teamA}} and {{teamB}}.
+        answerType:
+          $ref: "#/components/schemas/AnswerType"
+        optionSource:
+          $ref: "#/components/schemas/OptionSource"
+        evaluator:
+          $ref: "#/components/schemas/TemplateCode"
+        lockPolicy:
+          $ref: "#/components/schemas/LockPolicy"
+        points:
+          type: integer
+          minimum: 0
+          example: 10
+        isActive:
+          type: boolean
+          default: true
+      additionalProperties: false
+      minProperties: 1
+    PredictionTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        code:
+          $ref: "#/components/schemas/TemplateCode"
+        questionText:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Reusable text with supported placeholders, such as {{teamA}} and {{teamB}}.
+        answerType:
+          $ref: "#/components/schemas/AnswerType"
+        optionSource:
+          $ref: "#/components/schemas/OptionSource"
+        evaluator:
+          $ref: "#/components/schemas/TemplateCode"
+        lockPolicy:
+          $ref: "#/components/schemas/LockPolicy"
+        points:
+          type: integer
+          minimum: 0
+          example: 10
+        isActive:
+          type: boolean
+          default: true
+        questionType:
+          type: string
+          enum:
+            - STATIC
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - questionText
+        - answerType
+        - optionSource
+        - evaluator
+        - lockPolicy
+        - points
+        - isActive
+        - questionType
+        - version
+        - createdAt
+        - updatedAt
+    QuestionOption:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        label:
+          type: string
+          minLength: 1
+      required:
+        - id
+        - label
+    RecordResultRequest:
+      type: object
+      properties:
+        correctOptionIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          minItems: 1
+          uniqueItems: true
+          description: IDs from this question. Multiple IDs support tied winners.
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Required by the backend when changing an existing result.
+      additionalProperties: false
+      required:
+        - correctOptionIds
+    PredictionResult:
+      type: object
+      properties:
+        questionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        correctOptionIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+          minItems: 1
+          uniqueItems: true
+        version:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          nullable: true
+        recordedBy:
+          type: string
+          minLength: 1
+          maxLength: 128
+        recordedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - questionId
+        - correctOptionIds
+        - version
+        - reason
+        - recordedBy
+        - recordedAt
+        - updatedAt
+    PredictionQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        matchId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        templateCode:
+          $ref: "#/components/schemas/TemplateCode"
+        templateVersion:
+          type: integer
+          minimum: 1
+        questionType:
+          type: string
+          enum:
+            - STATIC
+        questionText:
+          type: string
+          minLength: 1
+          maxLength: 500
+        answerType:
+          $ref: "#/components/schemas/AnswerType"
+        optionSource:
+          $ref: "#/components/schemas/OptionSource"
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionOption"
+          minItems: 2
+        evaluator:
+          $ref: "#/components/schemas/TemplateCode"
+        lockPolicy:
+          $ref: "#/components/schemas/LockPolicy"
+        locksAt:
+          type: string
+          format: date-time
+        points:
+          type: integer
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/QuestionStatus"
+        result:
+          type: object
+          properties:
+            questionId:
+              type: string
+              minLength: 1
+              maxLength: 128
+            correctOptionIds:
+              type: array
+              items:
+                type: string
+                minLength: 1
+                maxLength: 128
+              minItems: 1
+              uniqueItems: true
+            version:
+              type: integer
+              minimum: 1
+            reason:
+              type: string
+              nullable: true
+            recordedBy:
+              type: string
+              minLength: 1
+              maxLength: 128
+            recordedAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+          required:
+            - questionId
+            - correctOptionIds
+            - version
+            - reason
+            - recordedBy
+            - recordedAt
+            - updatedAt
+          nullable: true
+          description: Null until resolved. Correct answers are never exposed before resolution.
+        voidReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - matchId
+        - templateCode
+        - templateVersion
+        - questionType
+        - questionText
+        - answerType
+        - optionSource
+        - options
+        - evaluator
+        - lockPolicy
+        - locksAt
+        - points
+        - status
+        - result
+        - voidReason
+        - createdAt
+        - updatedAt
+    CreateMatchQuestionsRequest:
+      type: object
+      properties:
+        templateCodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemplateCode"
+          minItems: 1
+          maxItems: 8
+          uniqueItems: true
+      additionalProperties: false
+      required:
+        - templateCodes
+    UpdateQuestionRequest:
+      type: object
+      properties:
+        questionText:
+          type: string
+          minLength: 1
+          maxLength: 500
+        points:
+          type: integer
+          minimum: 0
+        locksAt:
+          type: string
+          format: date-time
+          description: UTC cutoff. Must be in the future and cannot exceed the applicable event cutoff.
+      additionalProperties: false
+      minProperties: 1
+    VoidQuestionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      additionalProperties: false
+      required:
+        - reason
+    SubmitPredictionRequest:
+      type: object
+      properties:
+        selectedOptionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+      additionalProperties: false
+      required:
+        - selectedOptionId
+    UserPrediction:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 128
+        userId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        matchId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        questionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        selectedOptionId:
+          type: string
+          minLength: 1
+          maxLength: 128
+        outcome:
+          $ref: "#/components/schemas/PredictionOutcome"
+        awardedPoints:
+          type: integer
+          minimum: 0
+        submittedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - matchId
+        - questionId
+        - selectedOptionId
+        - outcome
+        - awardedPoints
+        - submittedAt
+        - updatedAt
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: QUESTION_LOCKED
+        message:
+          type: string
+          example: This question is closed for predictions.
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            required:
+              - field
+              - message
+      required:
+        - code
+        - message
+    TemplateList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictionTemplate"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - page
+        - pageSize
+        - total
+    QuestionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictionQuestion"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - page
+        - pageSize
+        - total
+    PredictionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserPrediction"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - page
+        - pageSize
+        - total
+    CreatedQuestionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictionQuestion"
+          minItems: 1
+      required:
+        - items

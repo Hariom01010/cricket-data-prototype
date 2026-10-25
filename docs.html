@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Documentation & Schema Mapping Reference | Cricket Prediction Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="brand">
+        <span class="brand-badge">ARCHITECTURE DOCS</span>
+        <h1>CricketData.org <span>→ Prediction Templates Mapping</span></h1>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link">← Interactive Prototype</a>
+        <a href="#endpoints" class="nav-link">APIs Overview</a>
+        <a href="#templates" class="nav-link">Template Mappings</a>
+        <a href="#settlement" class="nav-link">Settlement & Scoring</a>
+      </nav>
+    </header>
+
+    <!-- Hero Overview -->
+    <section class="docs-hero">
+      <h2>CricketData.org API Mapping Specification</h2>
+      <p>
+        Detailed technical breakdown of every CricketData.org API endpoint required to resolve, schedule, and settle prediction questions defined in <code>predictions-api-endpoints.yaml</code>.
+      </p>
+    </section>
+
+    <!-- Section 1: Endpoints Required -->
+    <section id="endpoints" class="docs-section">
+      <div class="section-title-wrap">
+        <span class="step-num">01</span>
+        <div>
+          <h3>CricketData.org Endpoints Used in Our Platform</h3>
+          <p>The 4 specific CricAPI v1 endpoints that power the prediction question lifecycle.</p>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Endpoint 1 -->
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="http-badge get">GET</span>
+            <code class="endpoint-url">https://api.cricapi.com/v1/matches</code>
+          </div>
+          <h4>1. Matches List (Fixture Schedule)</h4>
+          <p class="doc-desc">Returns all upcoming fixtures with exact scheduled start times, match types, venues, and competing teams.</p>
+          <div class="lifecycle-pill">Used For: Question Generation & Scheduling (T - 24h to T - 2h)</div>
+          
+          <div class="doc-fields-box">
+            <div class="field-label">Key Payload Fields Extracted:</div>
+            <ul class="field-list">
+              <li><code>id</code> (UUID): Used as <code>matchId</code> in our OpenAPI schema.</li>
+              <li><code>dateTimeGMT</code> (ISO 8601 UTC): Schedules publish time & calculates <code>locksAt</code>.</li>
+              <li><code>teams</code> (String[]): Fills <code>{{teamA}}</code>, <code>{{teamB}}</code> and generates <code>MATCH_TEAMS</code> options.</li>
+              <li><code>venue</code> (String): Resolves stadium name placeholder.</li>
+              <li><code>matchType</code> (String): Validates template applicability (t20, odi, test).</li>
+            </ul>
+          </div>
+
+          <details class="code-details">
+            <summary>View Sample Response Payload</summary>
+            <pre><code>{
+  "status": "success",
+  "data": [
+    {
+      "id": "b2f8e431-c912-48a6-8149-5f21f73b6411",
+      "name": "India vs Australia, 3rd T20I",
+      "matchType": "t20",
+      "status": "Match not started",
+      "venue": "Eden Gardens, Kolkata",
+      "date": "2026-10-27",
+      "dateTimeGMT": "2026-10-27T13:30:00",
+      "teams": ["India", "Australia"],
+      "teamInfo": [
+        { "name": "India", "shortname": "IND" },
+        { "name": "Australia", "shortname": "AUS" }
+      ]
+    }
+  ]
+}</code></pre>
+          </details>
+        </div>
+
+        <!-- Endpoint 2 -->
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="http-badge get">GET</span>
+            <code class="endpoint-url">https://api.cricapi.com/v1/match_squad?id={id}</code>
+          </div>
+          <h4>2. Match Squad (Lineups & Playing XI)</h4>
+          <p class="doc-desc">Returns squads and confirmed playing XI for both teams when released (typically 30–60 mins before kickoff).</p>
+          <div class="lifecycle-pill">Used For: Player Questions (MOST_RUNS, MOST_WICKETS, PLAYER_OF_MATCH)</div>
+
+          <div class="doc-fields-box">
+            <div class="field-label">Key Payload Fields Extracted:</div>
+            <ul class="field-list">
+              <li><code>data[].teamName</code>: Maps players to corresponding team.</li>
+              <li><code>players[].id</code>: Converted to our unique option id (e.g. <code>player_123</code>).</li>
+              <li><code>players[].name</code>: Question option label shown to user.</li>
+              <li><code>players[].role</code>: Categorizes Batter / Bowler / Wicketkeeper / Allrounder.</li>
+            </ul>
+          </div>
+
+          <details class="code-details">
+            <summary>View Sample Response Payload</summary>
+            <pre><code>{
+  "status": "success",
+  "data": [
+    {
+      "teamName": "India",
+      "players": [
+        { "id": "p-101", "name": "Rohit Sharma", "role": "Batter" },
+        { "id": "p-102", "name": "Virat Kohli", "role": "Batter" },
+        { "id": "p-103", "name": "Jasprit Bumrah", "role": "Bowler" }
+      ]
+    }
+  ]
+}</code></pre>
+          </details>
+        </div>
+
+        <!-- Endpoint 3 -->
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="http-badge get">GET</span>
+            <code class="endpoint-url">https://api.cricapi.com/v1/match_info?id={id}</code>
+          </div>
+          <h4>3. Match Info (Toss & Outcome Details)</h4>
+          <p class="doc-desc">Provides real-time toss results during pre-match, and official match winner / player of the match after completion.</p>
+          <div class="lifecycle-pill">Used For: Evaluating & Settling Toss & Outcome Predictions</div>
+
+          <div class="doc-fields-box">
+            <div class="field-label">Key Payload Fields Extracted:</div>
+            <ul class="field-list">
+              <li><code>tossWinner</code>: Team name winning the toss (Settles <code>TOSS_WINNER</code>).</li>
+              <li><code>tossChoice</code>: Decision ("bat" / "bowl") (Settles <code>TOSS_DECISION</code>).</li>
+              <li><code>matchWinner</code>: Winning team name (Settles <code>MATCH_WINNER</code>).</li>
+              <li><code>playerOfMatch</code>: Name of player (Settles <code>PLAYER_OF_MATCH</code>).</li>
+            </ul>
+          </div>
+
+          <details class="code-details">
+            <summary>View Sample Response Payload</summary>
+            <pre><code>{
+  "status": "success",
+  "data": {
+    "id": "b2f8e431-c912-48a6-8149-5f21f73b6411",
+    "name": "India vs Australia",
+    "tossWinner": "India",
+    "tossChoice": "bat",
+    "matchWinner": "India",
+    "playerOfMatch": "Virat Kohli"
+  }
+}</code></pre>
+          </details>
+        </div>
+
+        <!-- Endpoint 4 -->
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="http-badge get">GET</span>
+            <code class="endpoint-url">https://api.cricapi.com/v1/match_scorecard?id={id}</code>
+          </div>
+          <h4>4. Match Scorecard (Innings Stats)</h4>
+          <p class="doc-desc">Detailed scorecard providing per-player runs, wickets, team boundaries (sixes), and completed overs.</p>
+          <div class="lifecycle-pill">Used For: Evaluating Stats Predictions (Runs, Wickets, Sixes, Final Over)</div>
+
+          <div class="doc-fields-box">
+            <div class="field-label">Key Payload Fields Extracted:</div>
+            <ul class="field-list">
+              <li><code>scorecard[].batting[].r</code>: Runs scored (Settles <code>MOST_RUNS</code>).</li>
+              <li><code>scorecard[].bowling[].w</code>: Wickets taken (Settles <code>MOST_WICKETS</code>).</li>
+              <li><code>scorecard[].batting[].6s</code>: Sum of 6s per team (Settles <code>MOST_SIXES_TEAM</code>).</li>
+              <li><code>scorecard[].inning</code> / <code>overs</code>: Settles <code>FINAL_SCHEDULED_OVER</code>.</li>
+            </ul>
+          </div>
+
+          <details class="code-details">
+            <summary>View Sample Response Payload</summary>
+            <pre><code>{
+  "status": "success",
+  "data": {
+    "scorecard": [
+      {
+        "inning": "India Inning 1",
+        "batting": [
+          { "batsman": { "id": "p-101", "name": "Rohit Sharma" }, "r": 82, "6s": 5 }
+        ],
+        "bowling": [
+          { "bowler": { "id": "p-aus-1", "name": "Mitchell Starc" }, "w": 3 }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Template Mappings -->
+    <section id="templates" class="docs-section">
+      <div class="section-title-wrap">
+        <span class="step-num">02</span>
+        <div>
+          <h3>Template-by-Template Mapping Guide</h3>
+          <p>How each template from <code>predictions-api-endpoints.yaml</code> is pre-filled from API data.</p>
+        </div>
+      </div>
+
+      <div class="mapping-doc-table-wrap">
+        <table class="mapping-table full-table">
+          <thead>
+            <tr>
+              <th>Template Code</th>
+              <th>YAML Spec Definition</th>
+              <th>CricketData Input Field</th>
+              <th>Generated Question Text</th>
+              <th>Resolved Options (OptionSource)</th>
+              <th>Lock Cutoff (LockPolicy)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Template 1 -->
+            <tr>
+              <td><code>MATCH_WINNER</code></td>
+              <td>
+                AnswerType: <code>TEAM_SELECT</code><br>
+                Source: <code>MATCH_TEAMS</code><br>
+                Points: 10
+              </td>
+              <td><code>/matches</code><br>→ <code>data[].teams</code></td>
+              <td><em>"Who will win India vs Australia?"</em></td>
+              <td>
+                <code>[ { id: "team_ind", label: "India" }, { id: "team_aus", label: "Australia" } ]</code>
+              </td>
+              <td><code>BEFORE_MATCH_START</code><br>(<code>dateTimeGMT - 5m</code>)</td>
+            </tr>
+
+            <!-- Template 2 -->
+            <tr>
+              <td><code>TOSS_WINNER</code></td>
+              <td>
+                AnswerType: <code>TEAM_SELECT</code><br>
+                Source: <code>MATCH_TEAMS</code><br>
+                Points: 10
+              </td>
+              <td><code>/matches</code><br>→ <code>data[].teams</code></td>
+              <td><em>"Who will win the toss in India vs Australia?"</em></td>
+              <td>
+                <code>[ { id: "team_ind", label: "India" }, { id: "team_aus", label: "Australia" } ]</code>
+              </td>
+              <td><code>BEFORE_TOSS</code><br>(<code>dateTimeGMT - 30m</code>)</td>
+            </tr>
+
+            <!-- Template 3 -->
+            <tr>
+              <td><code>TOSS_DECISION</code></td>
+              <td>
+                AnswerType: <code>ENUM_SELECT</code><br>
+                Source: <code>BAT_OR_BOWL</code><br>
+                Points: 10
+              </td>
+              <td>Static Enum</td>
+              <td><em>"Will the toss winner bat or bowl?"</em></td>
+              <td>
+                <code>[ { id: "choice_bat", label: "Bat" }, { id: "choice_bowl", label: "Bowl" } ]</code>
+              </td>
+              <td><code>BEFORE_TOSS</code><br>(<code>dateTimeGMT - 30m</code>)</td>
+            </tr>
+
+            <!-- Template 4 -->
+            <tr>
+              <td><code>MOST_RUNS</code></td>
+              <td>
+                AnswerType: <code>PLAYER_SELECT</code><br>
+                Source: <code>CONFIRMED_MATCH_PLAYERS</code><br>
+                Points: 10
+              </td>
+              <td><code>/match_squad</code><br>→ <code>players[]</code></td>
+              <td><em>"Who will score the most runs?"</em></td>
+              <td>
+                <code>[ { id: "player_p101", label: "Rohit Sharma" }, { id: "player_p102", label: "Travis Head" }, ... ]</code>
+              </td>
+              <td><code>BEFORE_MATCH_START</code><br>(<code>dateTimeGMT - 5m</code>)</td>
+            </tr>
+
+            <!-- Template 5 -->
+            <tr>
+              <td><code>MOST_WICKETS</code></td>
+              <td>
+                AnswerType: <code>PLAYER_SELECT</code><br>
+                Source: <code>CONFIRMED_MATCH_PLAYERS</code><br>
+                Points: 10
+              </td>
+              <td><code>/match_squad</code><br>→ <code>players[]</code></td>
+              <td><em>"Who will take the most wickets?"</em></td>
+              <td>
+                <code>[ { id: "player_p103", label: "Jasprit Bumrah" }, { id: "player_p104", label: "Mitchell Starc" }, ... ]</code>
+              </td>
+              <td><code>BEFORE_MATCH_START</code><br>(<code>dateTimeGMT - 5m</code>)</td>
+            </tr>
+
+            <!-- Template 6 -->
+            <tr>
+              <td><code>MOST_SIXES_TEAM</code></td>
+              <td>
+                AnswerType: <code>TEAM_SELECT</code><br>
+                Source: <code>MATCH_TEAMS_WITH_TIE</code><br>
+                Points: 10
+              </td>
+              <td><code>/matches</code><br>→ <code>teams</code> + Static Tie</td>
+              <td><em>"Which team will hit more sixes?"</em></td>
+              <td>
+                <code>[ { id: "team_ind", label: "India" }, { id: "team_aus", label: "Australia" }, { id: "tie", label: "Tie / Equal" } ]</code>
+              </td>
+              <td><code>BEFORE_MATCH_START</code><br>(<code>dateTimeGMT - 5m</code>)</td>
+            </tr>
+
+            <!-- Template 7 -->
+            <tr>
+              <td><code>PLAYER_OF_MATCH</code></td>
+              <td>
+                AnswerType: <code>PLAYER_SELECT</code><br>
+                Source: <code>CONFIRMED_MATCH_PLAYERS</code><br>
+                Points: 10
+              </td>
+              <td><code>/match_squad</code><br>→ <code>players[]</code></td>
+              <td><em>"Who will be Player of the Match?"</em></td>
+              <td>
+                <code>[ { id: "player_p101", label: "Rohit Sharma" }, { id: "player_p102", label: "Virat Kohli" }, ... ]</code>
+              </td>
+              <td><code>BEFORE_MATCH_START</code><br>(<code>dateTimeGMT - 5m</code>)</td>
+            </tr>
+
+            <!-- Template 8 -->
+            <tr>
+              <td><code>FINAL_SCHEDULED_OVER</code></td>
+              <td>
+                AnswerType: <code>YES_NO</code><br>
+                Source: <code>YES_NO</code><br>
+                Points: 10
+              </td>
+              <td>Static Enum</td>
+              <td><em>"Will the match reach the final scheduled over?"</em></td>
+              <td>
+                <code>[ { id: "choice_yes", label: "Yes" }, { id: "choice_no", label: "No" } ]</code>
+              </td>
+              <td><code>BEFORE_MATCH_START</code><br>(<code>dateTimeGMT - 5m</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3: Automated Lifecycle Architecture -->
+    <section id="settlement" class="docs-section">
+      <div class="section-title-wrap">
+        <span class="step-num">03</span>
+        <div>
+          <h3>Automated Lifecycle & Settlement Pipeline</h3>
+          <p>How the platform transitions predictions from Draft to Published to Resolved.</p>
+        </div>
+      </div>
+
+      <div class="flow-steps-grid">
+        <div class="flow-step">
+          <div class="step-header">
+            <span class="flow-badge">Stage 1</span>
+            <h4>T - 24 Hours</h4>
+          </div>
+          <p>Call <code>/matches</code>. Identify upcoming fixtures and automatically generate draft questions for <code>MATCH_WINNER</code> and <code>TOSS_WINNER</code>.</p>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-header">
+            <span class="flow-badge">Stage 2</span>
+            <h4>T - 30 Mins (Toss)</h4>
+          </div>
+          <p>Call <code>/match_squad</code> to get confirmed Playing XI. Publish player-specific questions (<code>MOST_RUNS</code>, <code>MOST_WICKETS</code>). Automatically lock <code>TOSS_WINNER</code> & <code>TOSS_DECISION</code>.</p>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-header">
+            <span class="flow-badge">Stage 3</span>
+            <h4>T - 0 (Kickoff)</h4>
+          </div>
+          <p>Automatically lock all remaining match questions. Prevent new user prediction submissions.</p>
+        </div>
+
+        <div class="flow-step">
+          <div class="step-header">
+            <span class="flow-badge">Stage 4</span>
+            <h4>Post-Match Settlement</h4>
+          </div>
+          <p>Call <code>/match_info</code> & <code>/match_scorecard</code>. Compare user answers with winner, runs, wickets, and compute leaderboard points automatically.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Action -->
+    <footer class="docs-footer">
+      <div>
+        <h4>Ready to test with live data?</h4>
+        <p>Switch over to the interactive prototype to inspect live fixtures and generated OpenAPI responses.</p>
+      </div>
+      <a href="index.html" class="btn primary-btn">Open Interactive Prototype →</a>
+    </footer>
+  </div>
+</body>
+</html>
