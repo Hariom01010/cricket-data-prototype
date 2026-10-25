@@ -1,0 +1,9 @@
+{
+  "name": "cricketdata-prediction-engine",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.local.js",
+  "scripts": {
+    "start": "node server.local.js"
+  }
+}
